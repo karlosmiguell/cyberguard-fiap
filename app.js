@@ -52,14 +52,17 @@ function render(){
  const el=$("#app");scrollTo(0,0);
  if(v==="placar")return placar(el);
  if(v==="professor")return hostRoute(el,a);
+ if(v==="competicao")return competicao(el);
  if(v==="temas")return temas(el);
  if(v==="aula")return aulaRoute(el,r[1]);
  if(!S.name)return welcome(el);
+ if(v==="desafio")return desafioRoute(el,a);
+ if(v==="lab")return home(el);
  if(v==="fase")return phaseStart(el,+a);
  if(v==="mini")return mini(el,a);
  if(v==="checklist")return checklist(el);
  if(v==="resultado")return result(el);
- home(el);
+ hub(el);
 }
 
 /* ---------- boas-vindas e início ---------- */
@@ -74,7 +77,8 @@ function welcome(el){
 }
 function home(el){
  const bg=badges(),bc=Object.values(bg).filter(Boolean).length;
- el.innerHTML=`<h1>Olá, <span>${esc(S.name)}</span></h1>
+ el.innerHTML=`<button class="back" onclick="nav('#/')">← Início</button><h1>Laboratório <span>· ${esc(S.name)}</span></h1>
+ <div class="btns" style="margin:0 0 8px"><button class="btn sm alt" onclick="nav('#/aula/0')">Roteiro por tema (aula)</button><button class="btn sm alt" onclick="nav('#/competicao')">Como funciona a competição</button></div>
  <p class="lead">Progresso geral: ${xp()} de ${maxXp()} XP</p><div class="meter"><i style="width:${Math.min(100,xp()/maxXp()*100)}%"></i></div>
  <h2>Fases <span>· caixa de entrada</span></h2>
  <div class="grid">${DAYS.map(d=>{const un=phaseUnlocked(d.id),dn=phaseDone(d.id),n=Object.keys((S.phase[d.id]||{}).ans||{}).length;
@@ -92,7 +96,7 @@ function home(el){
 /* ---------- fases: e-mails ---------- */
 const TOOLS=[["rem","Quem mandou?"],["link","Para onde o link leva?"],["att","O que tem no anexo?"],["auth","Cabeçalhos do e-mail"],["ctx","Registro interno"]];
 function phaseStart(el,d){
- if(!DAYS.find(x=>x.id===d)||!phaseUnlocked(d))return nav("#/");
+ if(!DAYS.find(x=>x.id===d)||!phaseUnlocked(d))return nav("#/lab");
  const practice=phaseDone(d);
  const ans=((S.phase[d]||{}).ans)||{};
  const queue=shuf(dayEmails(d).filter(e=>practice||ans[e.id]===undefined));
@@ -102,7 +106,7 @@ function phaseStart(el,d){
 function mailView(el){
  if(P.i>=P.queue.length)return phaseEnd(el);
  const e=P.queue[P.i];P.seen[e.id]=P.seen[e.id]||new Set();P.answered=false;
- el.innerHTML=`<button class="back" onclick="nav('#/')">← Voltar ao painel</button>
+ el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Voltar ao painel</button>
  <div class="tag">Dia ${P.d} · e-mail ${P.i+1} de ${P.queue.length}${P.practice?" · modo treino (sem pontos)":""}</div>
  <div class="mail"><div class="h">Canal: ${esc(e.ch)}<br>De: <b>${esc(e.n[0])}</b> &lt;${esc(e.n[1])}&gt;${e.sub?`<br>Assunto: <b>${esc(e.sub)}</b>`:""}</div>
  <div>${e.body}</div>
@@ -137,25 +141,25 @@ function decide(e,c){
 function phaseEnd(el){
  const d=P.d;hud();
  el.innerHTML=`<h1>Dia ${d} <span>concluído</span></h1><div class="card"><div class="big">${P.practice?"—":P.got}</div><p class="lead">${P.practice?"Treino concluído. Em treino não há pontos novos.":`pontos ganhos agora · total do dia: ${phasePts(d)}/${dayMax(d)}`}</p>
- <div class="btns">${d<5?`<button class="btn" onclick="nav('#/fase/${d+1}')">Ir para o Dia ${d+1} →</button>`:""}<button class="btn alt" onclick="nav('#/')">Painel</button></div></div>`;
+ <div class="btns">${d<5?`<button class="btn" onclick="nav('#/fase/${d+1}')">Ir para o Dia ${d+1} →</button>`:""}<button class="btn alt" onclick="nav('#/lab')">Painel</button></div></div>`;
 }
 
 /* ---------- minijogos ---------- */
 function bank(k,v){S.mini[k]=Math.max(S.mini[k]||0,v);save();hud()}
 function mini(el,k){
- if(!MINI[k])return nav("#/");
+ if(!MINI[k])return nav("#/lab");
  ({caca,quiz,dados,inc,senha})[k](el);
 }
 function endCard(el,k,score,extra){
  bank(k,score);
- el.innerHTML=`<h1>${MINI[k].t} <span>concluído</span></h1><div class="card"><div class="big">${score}/${MINI[k].max}</div><p class="lead">${extra||""} Sua melhor pontuação conta no XP (${S.mini[k]}).</p><div class="btns"><button class="btn" onclick="mini($('#app'),'${k}')">Jogar de novo</button><button class="btn alt" onclick="nav('#/')">Painel</button></div></div>`;
+ el.innerHTML=`<h1>${MINI[k].t} <span>concluído</span></h1><div class="card"><div class="big">${score}/${MINI[k].max}</div><p class="lead">${extra||""} Sua melhor pontuação conta no XP (${S.mini[k]}).</p><div class="btns"><button class="btn" onclick="mini($('#app'),'${k}')">Jogar de novo</button><button class="btn alt" onclick="nav('#/lab')">Painel</button></div></div>`;
 }
 function caca(el){
  const q=shuf(CARDS);let i=0,sc=0,hit=0;
  const show=()=>{
   if(i>=q.length)return endCard(el,"caca",sc,`${hit} de ${q.length} corretas.`);
   const c=q[i];
-  el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><div class="tag">Caça-Golpe · ${i+1} de ${q.length}</div>
+  el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><div class="tag">Caça-Golpe · ${i+1} de ${q.length}</div>
   <div class="card"><p style="font-size:20px;color:#fff;margin:0">${esc(c.t)}</p><div class="decide" style="grid-template-columns:1fr 1fr" id="dc"><button data-c="1">🚩 Golpe</button><button data-c="0">✅ Legítima</button></div><div id="fb"></div></div>`;
   document.querySelectorAll("#dc button").forEach(b=>b.onclick=()=>{
    document.querySelectorAll("#dc button").forEach(x=>x.disabled=true);
@@ -169,7 +173,7 @@ function quiz(el){
  const show=()=>{
   if(i>=q.length)return endCard(el,"quiz",sc,`${hit} de ${q.length} corretas.`);
   const c=q[i];
-  el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><div class="tag">Quiz · ${i+1} de ${q.length}</div>
+  el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><div class="tag">Quiz · ${i+1} de ${q.length}</div>
   <div class="card"><p style="font-size:19px;color:#fff;margin:0 0 6px">${esc(c.q)}</p>${c.o.map((o,j)=>`<button class="opt" data-j="${j}">${esc(o.t)}</button>`).join("")}<div id="fb"></div></div>`;
   document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
    const j=+b.dataset.j,ok=c.o[j].r;if(ok){sc+=100;hit++}
@@ -181,7 +185,7 @@ function quiz(el){
 function dados(el){
  const zn=["Dado pessoal","Dado pessoal sensível","Não é dado pessoal"];let sel=null,place={};
  const draw=()=>{
-  el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><h1>Dados e <span>LGPD</span></h1><p class="lead">Escolha um dado e toque na caixa onde ele se encaixa (LGPD, art. 5º).</p>
+  el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><h1>Dados e <span>LGPD</span></h1><p class="lead">Escolha um dado e toque na caixa onde ele se encaixa (LGPD, art. 5º).</p>
   <div class="card"><div class="chips">${DATA_ITEMS.map((it,i)=>place[i]===undefined?`<button class="chip ${sel===i?"sel":""}" data-i="${i}">${esc(it[0])}</button>`:"").join("")||'<span class="lead">Todos classificados. Toque em Verificar.</span>'}</div>
   <div class="zones">${zn.map((z,k)=>`<div class="zone" data-z="${k}"><h4>${z}</h4>${DATA_ITEMS.map((it,i)=>place[i]===k?`<button class="chip" data-r="${i}">${esc(it[0])}</button>`:"").join(" ")}</div>`).join("")}</div>
   <div class="btns"><button class="btn" id="vf">Verificar</button><button class="btn alt" id="rs">Reiniciar</button></div><div id="fb"></div></div>`;
@@ -193,7 +197,7 @@ function dados(el){
    if(Object.keys(place).length<DATA_ITEMS.length){$("#fb").innerHTML='<div class="fb bad">Classifique todos os itens primeiro.</div>';return}
    let ok=0,errs=[];DATA_ITEMS.forEach((it,i)=>{if(place[i]===it[1])ok++;else errs.push(`<b>${esc(it[0])}</b> → ${zn[it[1]]}`)});
    bank("dados",ok*50);
-   $("#fb").innerHTML=`<div class="fb ${ok===10?"ok":"bad"}"><b>${ok}/10 corretos (+${ok*50} XP).</b> ${errs.length?"Revise: "+errs.join("; ")+".":"Perfeito!"}<div class="btns"><button class="btn" onclick="nav('#/')">Painel</button></div></div>`}};
+   $("#fb").innerHTML=`<div class="fb ${ok===10?"ok":"bad"}"><b>${ok}/10 corretos (+${ok*50} XP).</b> ${errs.length?"Revise: "+errs.join("; ")+".":"Perfeito!"}<div class="btns"><button class="btn" onclick="nav('#/lab')">Painel</button></div></div>`}};
  draw();
 }
 function inc(el){
@@ -201,7 +205,7 @@ function inc(el){
  const show=()=>{
   if(i>=q.length)return endCard(el,"inc",sc,`${hit} de ${q.length} decisões corretas.`);
   const c=q[i];
-  el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><div class="tag">Incidente ${i+1} de ${q.length}</div>
+  el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><div class="tag">Incidente ${i+1} de ${q.length}</div>
   <div class="card"><p style="font-size:19px;color:#fff;margin:0 0 6px">${esc(c.q)}</p>${c.o.map((o,j)=>`<button class="opt" data-j="${j}">${esc(o.t)}</button>`).join("")}<div id="fb"></div></div>`;
   document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
    const j=+b.dataset.j,ok=c.o[j].r;if(ok){sc+=100;hit++}
@@ -212,7 +216,7 @@ function inc(el){
 }
 const COMMON=["123456","password","senha","qwerty","abc123","111111","12345678","admin","brasil","fiap","letmein","iloveyou","atlantica"];
 function senha(el){
- el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><h1>Senha <span>forte</span></h1><p class="lead">Digite uma senha <b>de teste</b> (nunca a que você realmente usa). Nada é enviado ou salvo.</p>
+ el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><h1>Senha <span>forte</span></h1><p class="lead">Digite uma senha <b>de teste</b> (nunca a que você realmente usa). Nada é enviado ou salvo.</p>
  <div class="card"><input type="password" id="pw" placeholder="Digite uma senha de teste" autocomplete="off"><label class="l"><input type="checkbox" id="sh"> mostrar</label>
  <div class="meter"><i id="mt" style="width:0;background:var(--bad)"></i></div><div id="pr" class="lead">Digite para avaliar.</div><ul id="tp" class="lead"></ul>
  <div class="fb ok">💡 Exemplo: <b>cafe-azul-bicicleta-chuva-17</b>. Longa, fácil de lembrar e difícil de adivinhar. Use um gerenciador de senhas e MFA.</div>
@@ -237,7 +241,7 @@ function senha(el){
 /* ---------- checklist ---------- */
 function checklist(el){
  let k=0;
- el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><h1>Seu <span>checklist</span></h1><p class="lead">Marque o que você já faz ou se compromete a fazer a partir de amanhã. Cada item vale 10 XP.</p>
+ el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><h1>Seu <span>checklist</span></h1><p class="lead">Marque o que você já faz ou se compromete a fazer a partir de amanhã. Cada item vale 10 XP.</p>
  <div class="card"><div class="logo"><b>CyberGuard FIAP · Checklist de Segurança Digital, Privacidade e Conformidade</b></div>
  <div class="lead">${esc(S.name)}${S.group?" · Grupo "+esc(S.group):""} · ${new Date().toLocaleDateString("pt-BR")}</div>
  ${CHECKLIST.map(g=>`<div class="grp">${g[0]}</div>`+g[1].map(t=>{const id=k++;return `<label class="ck"><input type="checkbox" data-id="${id}" ${S.ck[id]?"checked":""}><span>${esc(t)}</span></label>`}).join("")).join("")}
@@ -254,7 +258,7 @@ function myCode(){return encodeCode({n:S.name,g:S.group||"-",s:xp(),l:level(),d:
 function result(el){
  const pc=Math.round(xp()/maxXp()*100),bg=badges();
  const title=pc>=85?"🛡 Guardião(ã) CyberGuard":pc>=60?"🔐 Defensor(a) em formação":"🎯 Aprendiz — revise e refaça!";
- el.innerHTML=`<button class="back" onclick="nav('#/')">← Painel</button><h1>Seu <span>resultado</span></h1>
+ el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><h1>Seu <span>resultado</span></h1>
  <div class="card row"><div><div class="big">${pc}%</div><div class="lead">${xp()} de ${maxXp()} XP · Nível ${level()}</div><h3>${title}</h3><div>${esc(S.name)}${S.group?" · Grupo "+esc(S.group):""}</div></div>
  <div>${DAYS.map(d=>`<div>Dia ${d.id}: <b>${phasePts(d.id)}/${dayMax(d.id)}</b></div>`).join("")}${Object.entries(MINI).map(([k,m])=>`<div>${m.t}: <b>${S.mini[k]||0}/${m.max}</b></div>`).join("")}<div>Checklist: <b>${ckPts()}/120</b></div></div></div>
  <div class="badges">${BADGES.map(b=>`<div class="badge ${bg[b[0]]?"got":""}"><b>${b[1]}</b>${b[2]}</div>`).join("")}</div>
@@ -265,19 +269,4 @@ function result(el){
  $("#cp").onclick=async()=>{try{await navigator.clipboard.writeText(myCode());$("#cp").textContent="Copiado ✓"}catch(e){const r=document.createRange();r.selectNodeContents($("#cd"));const s=getSelection();s.removeAllRanges();s.addRange(r);$("#cp").textContent="Selecionado: copie com Ctrl+C"}};
  $("#rs").onclick=()=>{if(confirm("Apagar todo o seu progresso neste navegador?")){try{localStorage.removeItem(KEY)}catch(e){}location.hash="#/";location.reload()}};
 }
-function placar(el){
- el.innerHTML=`<h1>Placar da <span>turma</span></h1><p class="lead">Cole os códigos dos participantes (um por linha ou separados por espaço). Para o projetor: abra esta página em <code>#/placar</code>.</p>
- <div class="card"><textarea id="ta" rows="5" placeholder="CG1.eyJ..."></textarea><div class="btns"><button class="btn" id="mk">Montar placar</button><button class="btn alt" id="ex">Exemplo</button></div></div><div id="out"></div>`;
- const build=()=>{
-  const by={};($("#ta").value.match(/CG1\.[A-Za-z0-9+/=]+/g)||[]).forEach(c=>{const o=decodeCode(c);if(!o)return;const k=(o.g+"|"+o.n).toLowerCase();if(!by[k]||by[k].s<o.s)by[k]=o});
-  const L=Object.values(by).sort((a,b)=>b.s-a.s);
-  if(!L.length){$("#out").innerHTML='<div class="card">Nenhum código válido encontrado.</div>';return}
-  const G={};L.forEach(o=>{const g=G[o.g]=G[o.g]||{n:0,s:0};g.n++;g.s+=o.s});
-  const gl=Object.entries(G).map(([g,v])=>({g,n:v.n,s:v.s,m:Math.round(v.s/v.n)})).sort((a,b)=>b.m-a.m);
-  $("#out").innerHTML=`<h2>Ranking <span>individual</span></h2><div class="card"><table><tr><th>#</th><th>Nome</th><th>Grupo</th><th>Nível</th><th>Fases</th><th>XP</th></tr>${L.map((o,i)=>`<tr><td>${i+1}${i<3?" "+["🥇","🥈","🥉"][i]:""}</td><td>${esc(o.n)}</td><td>${esc(o.g)}</td><td>${o.l}</td><td>${o.d}/5</td><td><b>${o.s}</b></td></tr>`).join("")}</table></div>
-  <h2>Ranking <span>por grupo</span> (média de XP)</h2><div class="card"><table><tr><th>#</th><th>Grupo</th><th>Pessoas</th><th>Média</th><th>Total</th></tr>${gl.map((g,i)=>`<tr><td>${i+1}</td><td>${esc(g.g)}</td><td>${g.n}</td><td><b>${g.m}</b></td><td>${g.s}</td></tr>`).join("")}</table></div>`};
- $("#mk").onclick=build;
- $("#ex").onclick=()=>{$("#ta").value=[["Ana",1,5200],["Bruno",1,4300],["Carla",2,6100],["Diego",2,3900],["Eva",3,2800]].map(([n,g,s])=>encodeCode({n,g:String(g),s,l:Math.floor(s/1000)+1,d:Math.min(5,Math.floor(s/1200)),b:2})).join("\n");build()};
-}
-
 render();
