@@ -88,3 +88,6 @@ code.cd{display:block;word-break:break-all;background:#0b0b0b;border:1px solid #
 footer{text-align:center;color:#555;font-size:12px;padding:24px 10px}
 @media print{body{background:#fff;color:#000}header.top,.btns,footer,.back{display:none!important}.card{background:#fff;border-color:#999}.big,.grp,h1 span,h2 span{color:#ED145B;text-shadow:none}code.cd{background:#fff;color:#000}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+#backAula{display:none;position:fixed;right:16px;bottom:16px;z-index:50;background:var(--mag);color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:30px;box-shadow:0 0 18px rgba(255,46,151,.6);font-size:14px}
+@media print{#backAula{display:none!important}}

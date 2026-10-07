@@ -47,8 +47,13 @@ function hud(){
 }
 function render(){
  hud();const r=(location.hash||"#/").slice(2).split("/");const v=r[0]||"home",a=r[1];
+ let ai=null;try{ai=sessionStorage.getItem("cgAula")}catch(e){}
+ const ba=$("#backAula");if(ba){const show=ai!==null&&["fase","mini","checklist","resultado"].includes(v);ba.style.display=show?"block":"none";ba.href="#/aula/"+(ai||0)}
  const el=$("#app");scrollTo(0,0);
  if(v==="placar")return placar(el);
+ if(v==="professor")return hostRoute(el,a);
+ if(v==="temas")return temas(el);
+ if(v==="aula")return aulaRoute(el,r[1]);
  if(!S.name)return welcome(el);
  if(v==="fase")return phaseStart(el,+a);
  if(v==="mini")return mini(el,a);
@@ -160,7 +165,7 @@ function caca(el){
  show();
 }
 function quiz(el){
- const q=shuf(QUIZ).map(x=>{const o=x.o.map((t,j)=>({t,r:j===x.a}));return {q:x.q,o:shuf(o),w:x.w}});let i=0,sc=0,hit=0;
+ const q=shuf(LIVEQ).slice(0,12).map(x=>{const o=x.o.map((t,j)=>({t,r:j===x.a}));return {q:x.q,o:shuf(o),w:x.w}});let i=0,sc=0,hit=0;
  const show=()=>{
   if(i>=q.length)return endCard(el,"quiz",sc,`${hit} de ${q.length} corretas.`);
   const c=q[i];
