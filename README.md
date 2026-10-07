@@ -14,7 +14,7 @@ A organização (Atlântica Serviços) e todos os domínios usados nos exemplos 
 Projeto inspirado no Hackudinhos (Faculdade de Defesa Cibernética), reescrito do zero.
 
 ## Assuntos abordados
-Casos reais, phishing, engenharia social, malware e ransomware, senhas e MFA, LGPD (conceitos e obrigações), incidentes, terceiros e continuidade, IA e privacidade. Ao todo: 20 e-mails em 5 fases, 16 cartas do Caça-Golpe, 34 perguntas de quiz, 10 itens de classificação LGPD, 4 cenários de incidente, senha forte e checklist de 12 itens.
+Casos reais, phishing, engenharia social, malware e ransomware, senhas e MFA, LGPD (conceitos e obrigações), incidentes, terceiros e continuidade, IA e privacidade. Ao todo: 20 e-mails em 5 fases, 16 cartas do Caça-Golpe, 37 perguntas de quiz, 10 itens de classificação LGPD, 4 cenários de incidente, senha forte e checklist de 12 itens.
 
 ## Respostas e validação
 - Tela do professor `#/validar`: percorre os 77 itens revelando a resposta de cada um (inclusive o e-mail `atlantica-ti`).
