@@ -12,3 +12,14 @@ O progresso fica só no navegador de quem joga.
 A organização (Atlântica Serviços) e todos os domínios usados nos exemplos são fictícios.
 
 Projeto inspirado no Hackudinhos (Faculdade de Defesa Cibernética), reescrito do zero.
+
+## Assuntos abordados
+Casos reais, phishing, engenharia social, malware e ransomware, senhas e MFA, LGPD (conceitos e obrigações), incidentes, terceiros e continuidade, IA e privacidade. Ao todo: 20 e-mails em 5 fases, 16 cartas do Caça-Golpe, 34 perguntas de quiz, 10 itens de classificação LGPD, 4 cenários de incidente, senha forte e checklist de 12 itens.
+
+## Respostas e validação
+- Tela do professor `#/validar`: percorre os 77 itens revelando a resposta de cada um (inclusive o e-mail `atlantica-ti`).
+- `#/exemplos`: exemplos diferentes da competição, para praticar ao vivo antes de valer.
+- `#/temas`: lista de todos os assuntos com gabarito.
+- Deck `CyberGuard-Respostas-Checklist.pptx`: todas as respostas com checklist de validação com a turma.
+
+As áreas do professor exigem PIN (`#/prof`).
