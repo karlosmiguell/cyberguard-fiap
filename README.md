@@ -7,7 +7,7 @@ O progresso fica só no navegador de quem joga.
 - 5 fases de e-mails com ferramentas de investigação (20 mensagens)
 - Minijogos: Caça-Golpe, Quiz, Dados e LGPD, Incidentes e Senha forte
 - Checklist imprimível e conquistas
-- Código de resultado e placar da turma para o projetor (`#/placar`)
+- Competição por grupo: um representante joga, cronômetro, entrega e código. Placar para o projetor (`#/placar`)
 
 A organização (Atlântica Serviços) e todos os domínios usados nos exemplos são fictícios.
 

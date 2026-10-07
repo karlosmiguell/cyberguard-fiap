@@ -21,7 +21,7 @@ function profGate(el){
 function ptool(){
  const t=$("#ptool");if(!t)return;
  if(!isProf()){t.innerHTML="";t.style.display="none";return}
- const L=[["Início","#/"],["Laboratório","#/lab"],["Desafio","#/desafio"],["Teste do desafio","#/desafio/teste"],["Como funciona","#/competicao"],["Roteiro","#/aula/0"],["Quiz ao vivo","#/professor"],["Placar","#/placar"],["Acompanhar grupos","#/grupos"],["Gabaritos","#/temas"],["Sair","#/prof"]];
+ const L=[["Competição","#/"],["Como funciona","#/competicao"],["Placar","#/placar"],["Acompanhar grupos","#/grupos"],["Gabaritos","#/temas"],["Roteiro por tema","#/aula/0"],["Quiz ao vivo","#/professor"],["Sair","#/prof"]];
  t.style.display="flex";t.innerHTML='<span class="tag">Professor</span>'+L.map(l=>`<a href="${l[1]}">${l[0]}</a>`).join("");
 }
 
@@ -29,7 +29,7 @@ function ptool(){
 let LP=null,LC=[],LAST="",LSTAT="";
 function snap(){
  return JSON.stringify({h:location.hash,hud:($("#hud")||{}).innerHTML||"",html:($("#app")||{}).innerHTML||"",
-  meta:{g:S.group,n:S.name,xp:xp(),dr:S.dr||null,dz:(S.dz&&S.dz.start&&!S.dz.end)?{i:S.dz.i,s:S.dz.s}:null,tag:(($("#app .tag")||{}).textContent||"").slice(0,80),ts:Date.now()}});
+  meta:{g:S.group,n:S.name,xp:xp(),cs:S.cs||null,ce:S.ce||null,tag:(($("#app .tag")||{}).textContent||"").slice(0,80),ts:Date.now()}});
 }
 function pushSnap(){
  const s=snap();if(s===LAST)return;LAST=s;LC=LC.filter(c=>c.open);LC.forEach(c=>{try{c.send(s)}catch(e){}});
@@ -111,7 +111,7 @@ function grupos(el){
    const card=[...document.querySelectorAll("#gl .card")].find(c=>c.dataset.g===g);const hid=document.createElement("div");
    const m=mirrorTo(hid,{set textContent(t){const p=card&&card.querySelector('[data-r="s"]');if(p&&!(GM[g]&&GM[g].got))p.textContent=t}},g,(meta,d)=>{
     GM[g].got=true;GM[g].last=d;
-    if(card){card.querySelector('[data-r="n"]').textContent=meta.n||"—";card.querySelector('[data-r="s"]').innerHTML=`XP <b>${meta.xp}</b> · ${meta.dz?`Desafio em andamento: item ${meta.dz.i+1}/16, ${meta.dz.s} pts`:meta.dr?`Desafio concluído: ${meta.dr.s} pts em ${fmtT(meta.dr.t)}`:"Desafio não iniciado"}<br><span style="color:var(--mut)">${esc(meta.tag||"")}</span>`}
+    if(card){card.querySelector('[data-r="n"]').textContent=meta.n||"—";card.querySelector('[data-r="s"]').innerHTML=`${meta.ce?`✅ Entregue: <b>${meta.xp}</b> pts em ${fmtT((meta.ce-meta.cs)/1000)}`:meta.cs?`⏱ Em andamento: <b>${meta.xp}</b> pts · ${fmtT((meta.ts-meta.cs)/1000)}`:"Ainda não iniciou"}<br><span style="color:var(--mut)">${esc(meta.tag||"")}</span>`}
     if(GM[g].full)$("#mirror2").innerHTML=cleanHtml(d.html)});
    if(m){GM[g]=m;m.full=false;m.got=false}
   });

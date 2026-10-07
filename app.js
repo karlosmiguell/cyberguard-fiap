@@ -6,7 +6,7 @@ EMAILS.forEach((e,i)=>e.id=i);
 
 /* ---------- estado ---------- */
 const KEY="cyberguard-fiap-v1";
-let S={name:"",group:"",phase:{},mini:{},ck:{},tools:{}};
+let S={name:"",group:"",phase:{},mini:{},ck:{},tools:{},cs:null,ce:null};
 try{S=Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
@@ -21,7 +21,11 @@ const dayEmails=d=>EMAILS.filter(e=>e.day===d);
 const dayMax=d=>dayEmails(d).length*100*d;
 const phasePts=d=>Object.values((S.phase[d]||{}).ans||{}).reduce((a,b)=>a+b,0);
 const phaseDone=d=>dayEmails(d).every(e=>((S.phase[d]||{}).ans||{})[e.id]!==undefined);
-const phaseUnlocked=d=>true; /* laboratório: tudo liberado */
+const phaseUnlocked=d=>true; /* tudo liberado depois de iniciar */
+const started=()=>!!S.cs,ended=()=>!!S.ce;
+const elapsed=()=>Math.round(((S.ce||Date.now())-(S.cs||Date.now()))/1000);
+function iniciar(){if(S.cs)return;S.cs=Date.now();save();render()}
+function entregar(){if(!S.cs||S.ce)return;if(!confirm("Entregar agora? O tempo para e o grupo não poderá continuar."))return;S.ce=Date.now();save();hud();nav("#/resultado");render()}
 const ckCount=()=>Object.values(S.ck).filter(Boolean).length;
 const ckPts=()=>ckCount()*10;
 const miniPts=()=>Object.values(S.mini).reduce((a,b)=>a+b,0);
@@ -43,8 +47,9 @@ function nav(h){location.hash=h}
 window.addEventListener("hashchange",render);
 function hud(){
  const lv=level(),into=xp()%1000;
- $("#hud").innerHTML=S.name?`<span class="pill">${S.group?"Grupo <b>"+esc(S.group)+"</b> · ":""}${esc(S.name)}</span><span class="pill">Nível <b>${lv}</b><span class="xpbar"><i style="width:${into/10}%"></i></span></span><span class="pill"><b>${xp()}</b> XP</span>`:"";
+ $("#hud").innerHTML=S.name?`<span class="pill">${S.group?"Grupo <b>"+esc(S.group)+"</b> · ":""}${esc(S.name)}</span><span class="pill">Nível <b>${lv}</b><span class="xpbar"><i style="width:${into/10}%"></i></span></span><span class="pill"><b>${xp()}</b> pts</span>${S.ce?`<span class="pill" id="cl">✅ Entregue · ${fmtT(elapsed())}</span>`:S.cs?`<span class="pill" id="cl">⏱ ${fmtT(elapsed())}</span>`:""}`:"";
 }
+setInterval(()=>{const c=$("#cl");if(c&&S.cs&&!S.ce)c.textContent="⏱ "+fmtT(elapsed())},1000);
 function render(){
  hud();const r=(location.hash||"#/").slice(2).split("/");const v=r[0]||"home",a=r[1];
  let ai=null;try{ai=sessionStorage.getItem("cgAula")}catch(e){}
@@ -53,7 +58,7 @@ function render(){
  ptool();
  if(v==="prof")return profLogin(el);
  if(v==="acompanhar")return acompanhar(el);
- if(["placar","professor","temas","grupos"].includes(v)&&!isProf())return profGate(el);
+ if(["placar","professor","temas","grupos","aula"].includes(v)&&!isProf())return profGate(el);
  if(v==="grupos")return grupos(el);
  if(v==="placar")return placar(el);
  if(v==="professor")return hostRoute(el,a);
@@ -61,13 +66,13 @@ function render(){
  if(v==="temas")return temas(el);
  if(v==="aula")return aulaRoute(el,r[1]);
  if(!S.name)return welcome(el);
- if(v==="desafio")return desafioRoute(el,a);
- if(v==="lab")return home(el);
+ if(["fase","mini","checklist"].includes(v)){if(!S.cs){nav("#/");return}if(S.ce){nav("#/resultado");return}}
+ if(v==="lab"||v==="home")return home(el);
  if(v==="fase")return phaseStart(el,+a);
  if(v==="mini")return mini(el,a);
  if(v==="checklist")return checklist(el);
  if(v==="resultado")return result(el);
- hub(el);
+ home(el);
 }
 
 /* ---------- boas-vindas e início ---------- */
@@ -77,12 +82,12 @@ function welcome(el){
  <div class="card"><label class="l" for="gp">Nome do grupo (sem repetir com outro grupo)</label><input type="text" id="gp" maxlength="30" placeholder="Ex.: Os Guardiões" autocomplete="off">
  <label class="l" for="nm">Nome do representante</label><input type="text" id="nm" maxlength="30" placeholder="Ex.: Ana S." autocomplete="off">
  <div class="btns"><button class="btn" id="go">Cadastrar grupo e começar</button><button class="btn alt" onclick="nav('#/acompanhar')">Só quero acompanhar um grupo</button></div><div id="fb"></div></div>
- <div class="card"><b>Como funciona</b><ul><li>O representante faz as atividades. O restante do grupo acompanha e ajuda a decidir.</li><li>O Laboratório é para treinar. O Desafio vale a competição: mais pontos em menos tempo ganha o chocolate.</li><li>Nada do que você digita é enviado a servidores; o acompanhamento ao vivo é feito direto entre os dispositivos.</li></ul></div>`;
+ <div class="card"><b>Como funciona</b><ul><li>O representante faz as atividades. O restante do grupo acompanha e ajuda a decidir.</li><li>O Laboratório <b>é a competição</b>: vence quem entrega com mais pontos e, em empate, em menos tempo. O vencedor ganha um chocolate.</li><li>Depois de cadastrar, o cronômetro só começa quando o representante clicar em <b>Iniciar competição</b>.</li><li>Nada do que você digita é enviado a servidores; o acompanhamento ao vivo é feito direto entre os dispositivos.</li></ul></div>`;
  $("#go").onclick=async()=>{
   const g=$("#gp").value.trim(),n=$("#nm").value.trim();
   if(!g){$("#gp").focus();return}if(!n){$("#nm").focus();return}
   const b=$("#go");b.disabled=true;b.textContent="Cadastrando…";
-  const done=()=>{S={name:n.slice(0,30),group:g.slice(0,30),phase:{},mini:{},ck:{},tools:{}};save();liveHost();render()};
+  const done=()=>{S={name:n.slice(0,30),group:g.slice(0,30),phase:{},mini:{},ck:{},tools:{},cs:null,ce:null};save();liveHost();render()};
   if(!window.Peer){done();return}
   /* testa se o nome do grupo já está em uso */
   let finished=false;const fin=(ok,msg)=>{if(finished)return;finished=true;try{t.destroy()}catch(e){}
@@ -95,20 +100,24 @@ function welcome(el){
 }
 function home(el){
  const bg=badges(),bc=Object.values(bg).filter(Boolean).length;
- el.innerHTML=`<button class="back" onclick="nav('#/')">← Início</button><h1>Laboratório <span>· ${esc(S.name)}</span></h1>
- <div class="btns" style="margin:0 0 8px"><button class="btn sm alt" onclick="nav('#/aula/0')">Roteiro por tema (aula)</button><button class="btn sm alt" onclick="nav('#/competicao')">Como funciona a competição</button></div>
- <p class="lead">Progresso geral: ${xp()} de ${maxXp()} XP</p><div class="meter"><i style="width:${Math.min(100,xp()/maxXp()*100)}%"></i></div>
+ const lock=!S.cs||!!S.ce;
+ const status=S.ce?`<div class="card on"><span class="tag">Entregue</span><h3>Competição encerrada para o grupo</h3><div class="row"><div><div class="big">${xp()}</div><div class="lead">pontos</div></div><div><div class="big">${fmtT(elapsed())}</div><div class="lead">tempo</div></div></div><div class="btns"><button class="btn" onclick="nav('#/resultado')">Ver código para entregar ao professor</button></div></div>`
+  :S.cs?`<div class="card on"><span class="tag">Em andamento</span><h3>Cronômetro rodando</h3><p>Faça as atividades em qualquer ordem. Quando terminar, ou quando o professor pedir, clique em Entregar.</p><div class="btns"><button class="btn" onclick="entregar()">Entregar agora</button></div></div>`
+  :`<div class="card on"><span class="tag">Pronto?</span><h3>Aguarde o professor dizer “valendo”</h3><p>Só o representante clica. O cronômetro começa ao iniciar e só para quando o grupo entregar. Vence quem tiver mais pontos e, em empate, menos tempo.</p><div class="btns"><button class="btn" onclick="iniciar()">Iniciar competição</button><button class="btn alt" onclick="nav('#/competicao')">Ver as regras</button></div></div>`;
+ el.innerHTML=`<h1>Competição <span>· Grupo ${esc(S.group)}</span></h1>
+ ${status}
+ <p class="lead" style="margin-top:14px">Progresso: ${xp()} de ${maxXp()} pontos ${lock&&!S.ce?"· as atividades liberam quando você iniciar":""}</p><div class="meter"><i style="width:${Math.min(100,xp()/maxXp()*100)}%"></i></div>
  <h2>Fases <span>· caixa de entrada</span></h2>
- <div class="grid">${DAYS.map(d=>{const un=phaseUnlocked(d.id),dn=phaseDone(d.id),n=Object.keys((S.phase[d.id]||{}).ans||{}).length;
-  return `<div class="card ${un?"":"lock"} ${dn?"on":""}"><span class="tag">Dia ${d.id} · dificuldade ${d.d}</span><h3>${d.title}</h3><p>${d.desc}</p>
+ <div class="grid">${DAYS.map(d=>{const dn=phaseDone(d.id),n=Object.keys((S.phase[d.id]||{}).ans||{}).length;
+  return `<div class="card ${dn?"on":""} ${lock?"lock":""}"><span class="tag">Dia ${d.id} · dificuldade ${d.d}</span><h3>${d.title}</h3><p>${d.desc}</p>
   <div class="prog" style="font-size:13px;color:var(--mut)">${dn?"Concluída":n+"/4 e-mails"} · ${phasePts(d.id)}/${dayMax(d.id)} pts</div>
-  <div class="btns"><button class="btn sm" ${un?"":"disabled"} onclick="nav('#/fase/${d.id}')">${dn?"Treinar de novo":n?"Continuar":un?"Começar":"Trancada"}</button></div></div>`}).join("")}</div>
- <h2>Minijogos <span>· para treinar</span></h2>
- <div class="grid">${Object.entries(MINI).map(([k,m])=>`<div class="card"><span class="tag">Melhor: ${S.mini[k]||0}/${m.max}</span><h3>${m.t}</h3><p>${m.d}</p><div class="btns"><button class="btn sm alt" onclick="nav('#/mini/${k}')">Jogar</button></div></div>`).join("")}
- <div class="card"><span class="tag">${ckCount()}/${CHECKLIST.flatMap(g=>g[1]).length} marcados</span><h3>Checklist de segurança</h3><p>Seu plano pessoal de boas práticas. Dá para imprimir ou salvar em PDF.</p><div class="btns"><button class="btn sm alt" onclick="nav('#/checklist')">Abrir</button></div></div></div>
+  <div class="btns"><button class="btn sm" ${lock?"disabled":""} onclick="nav('#/fase/${d.id}')">${dn?"Rever (sem pontos)":n?"Continuar":"Começar"}</button></div></div>`}).join("")}</div>
+ <h2>Minijogos</h2>
+ <div class="grid">${Object.entries(MINI).map(([k,m])=>`<div class="card ${lock?"lock":""}"><span class="tag">Melhor: ${S.mini[k]||0}/${m.max}</span><h3>${m.t}</h3><p>${m.d}</p><div class="btns"><button class="btn sm alt" ${lock?"disabled":""} onclick="nav('#/mini/${k}')">Jogar</button></div></div>`).join("")}
+ <div class="card ${lock?"lock":""}"><span class="tag">${ckCount()}/${CHECKLIST.flatMap(g=>g[1]).length} marcados</span><h3>Checklist de segurança</h3><p>Plano de boas práticas do grupo. Cada item vale 10 pontos.</p><div class="btns"><button class="btn sm alt" ${lock?"disabled":""} onclick="nav('#/checklist')">Abrir</button></div></div></div>
  <h2>Conquistas <span>· ${bc}/${BADGES.length}</span></h2>
  <div class="badges">${BADGES.map(b=>`<div class="badge ${bg[b[0]]?"got":""}"><b>${b[1]}</b>${b[2]}</div>`).join("")}</div>
- <div class="btns"><button class="btn" onclick="nav('#/resultado')">Ver meu resultado e código</button></div>`;
+ <div class="btns"><button class="btn alt" onclick="nav('#/competicao')">Regras da competição</button></div>`;
 }
 
 /* ---------- fases: e-mails ---------- */
@@ -272,20 +281,22 @@ function checklist(el){
 /* ---------- resultado, código e placar ---------- */
 const encodeCode=o=>"CG1."+btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const decodeCode=s=>{try{const m=s.trim().match(/CG1\.[A-Za-z0-9+/=]+/);if(!m)return null;const o=JSON.parse(decodeURIComponent(escape(atob(m[0].slice(4)))));return typeof o.s==="number"&&o.n?o:null}catch(e){return null}};
-function myCode(){return encodeCode({n:S.name,g:S.group||"-",s:xp(),l:level(),d:DAYS.filter(d=>phaseDone(d.id)).length,b:Object.values(badges()).filter(Boolean).length})}
+function myCode(){return encodeCode({n:S.name,g:S.group||"-",s:xp(),l:level(),d:DAYS.filter(d=>phaseDone(d.id)).length,b:Object.values(badges()).filter(Boolean).length,c:xp(),ct:elapsed()})}
 function result(el){
+ if(!S.ce){
+  el.innerHTML=`<h1>Resultado <span>do grupo</span></h1><div class="card"><p>O grupo ainda não entregou. ${S.cs?"O cronômetro está rodando.":"A competição ainda não foi iniciada."}</p><div class="btns"><button class="btn" onclick="nav('#/')">Voltar à competição</button>${S.cs?'<button class="btn alt" onclick="entregar()">Entregar agora</button>':""}</div></div>`;return}
  const pc=Math.round(xp()/maxXp()*100),bg=badges();
- const title=pc>=85?"🛡 Guardião(ã) CyberGuard":pc>=60?"🔐 Defensor(a) em formação":"🎯 Aprendiz — revise e refaça!";
- el.innerHTML=`<button class="back" onclick="nav('#/lab')">← Painel</button><h1>Seu <span>resultado</span></h1>
- <div class="card row"><div><div class="big">${pc}%</div><div class="lead">${xp()} de ${maxXp()} XP · Nível ${level()}</div><h3>${title}</h3><div>${esc(S.name)}${S.group?" · Grupo "+esc(S.group):""}</div></div>
- <div>${DAYS.map(d=>`<div>Dia ${d.id}: <b>${phasePts(d.id)}/${dayMax(d.id)}</b></div>`).join("")}${Object.entries(MINI).map(([k,m])=>`<div>${m.t}: <b>${S.mini[k]||0}/${m.max}</b></div>`).join("")}<div>Checklist: <b>${ckPts()}/120</b></div></div></div>
+ const title=pc>=85?"🛡 Guardiões CyberGuard":pc>=60?"🔐 Defensores em formação":"🎯 Aprendizes — continuem treinando!";
+ el.innerHTML=`<h1>Entrega <span>concluída</span></h1>
+ <div class="card row"><div><div class="big">${xp()}</div><div class="lead">de ${maxXp()} pontos</div></div><div><div class="big">${fmtT(elapsed())}</div><div class="lead">tempo total</div></div><div><h3>${title}</h3><div>Grupo ${esc(S.group)} · ${esc(S.name)}</div></div></div>
+ <div class="card"><div class="tag">Por atividade</div>${DAYS.map(d=>`<div>Dia ${d.id}: <b>${phasePts(d.id)}/${dayMax(d.id)}</b></div>`).join("")}${Object.entries(MINI).map(([k,m])=>`<div>${m.t}: <b>${S.mini[k]||0}/${m.max}</b></div>`).join("")}<div>Checklist: <b>${ckPts()}/120</b></div></div>
  <div class="badges">${BADGES.map(b=>`<div class="badge ${bg[b[0]]?"got":""}"><b>${b[1]}</b>${b[2]}</div>`).join("")}</div>
- <h2>Código para o <span>placar da turma</span></h2><p class="lead">Copie o código e envie ao facilitador (chat ou formulário). Ele aparece no placar do projetor.</p>
+ <h2>Código para <span>entregar ao professor</span></h2><p class="lead">O representante copia o código e entrega ao professor. Ele monta o placar na frente de todos.</p>
  <code class="cd" id="cd">${myCode()}</code>
- <div class="btns"><button class="btn" id="cp">Copiar código</button><button class="btn alt" onclick="window.print()">🖨 Imprimir resultado</button><button class="btn alt" id="rs">Reiniciar tudo</button></div>
- <div class="card"><b>Lembre-se:</b> na dúvida, <b>pare, desconfie, confirme por outro canal e reporte</b> à TI e ao Encarregado (DPO).</div>`;
+ <div class="btns"><button class="btn" id="cp">Copiar código</button>${isProf()?'<button class="btn alt" id="rs">Reiniciar tudo (demonstração)</button>':""}</div>
+ <div class="card">Vence quem tiver <b>mais pontos</b> e, em empate, <b>menor tempo</b>. 🍫</div>`;
  $("#cp").onclick=async()=>{try{await navigator.clipboard.writeText(myCode());$("#cp").textContent="Copiado ✓"}catch(e){const r=document.createRange();r.selectNodeContents($("#cd"));const s=getSelection();s.removeAllRanges();s.addRange(r);$("#cp").textContent="Selecionado: copie com Ctrl+C"}};
- $("#rs").onclick=()=>{if(confirm("Apagar todo o seu progresso neste navegador?")){try{localStorage.removeItem(KEY)}catch(e){}location.hash="#/";location.reload()}};
+ if($("#rs"))$("#rs").onclick=()=>{if(confirm("Apagar todo o progresso neste navegador?")){try{localStorage.removeItem(KEY)}catch(e){}location.hash="#/";location.reload()}};
 }
 render();
 liveStart();
