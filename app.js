@@ -21,7 +21,7 @@ const dayEmails=d=>EMAILS.filter(e=>e.day===d);
 const dayMax=d=>dayEmails(d).length*100*d;
 const phasePts=d=>Object.values((S.phase[d]||{}).ans||{}).reduce((a,b)=>a+b,0);
 const phaseDone=d=>dayEmails(d).every(e=>((S.phase[d]||{}).ans||{})[e.id]!==undefined);
-const phaseUnlocked=d=>d===1||phaseDone(d-1);
+const phaseUnlocked=d=>true; /* laboratório: tudo liberado */
 const ckCount=()=>Object.values(S.ck).filter(Boolean).length;
 const ckPts=()=>ckCount()*10;
 const miniPts=()=>Object.values(S.mini).reduce((a,b)=>a+b,0);
@@ -49,6 +49,7 @@ function render(){
  hud();const r=(location.hash||"#/").slice(2).split("/");const v=r[0]||"home",a=r[1];
  let ai=null;try{ai=sessionStorage.getItem("cgAula")}catch(e){}
  const ba=$("#backAula");if(ba){const show=ai!==null&&["fase","mini","checklist","resultado"].includes(v);ba.style.display=show?"block":"none";ba.href="#/aula/"+(ai||0)}
+ const pl=$("#pl");if(pl)pl.style.display=(v==="desafio"||v==="home")?"none":"inline";
  const el=$("#app");scrollTo(0,0);
  if(v==="placar")return placar(el);
  if(v==="professor")return hostRoute(el,a);
