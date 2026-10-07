@@ -40,7 +40,7 @@ function liveHost(tries){
  tries=tries||0;
  try{LP=new Peer("cgfiap-"+slug(S.group))}catch(e){liveStatus("Sem acompanhamento ao vivo");return}
  LP.on("open",()=>liveStatus("Acompanhamento ao vivo ativo"));
- LP.on("connection",c=>{LC.push(c);c.on("open",()=>{try{c.send(snap())}catch(e){}});c.on("data",()=>{})});
+ LP.on("connection",c=>{LC.push(c);c.on("open",()=>{try{c.send(snap())}catch(e){}});c.on("data",d=>{try{const m=JSON.parse(d);if(m&&m.ph===PROF_HASH&&(m.cmd==="reset"||m.cmd==="delete"))applyCmd(m.cmd)}catch(e){}})});
  LP.on("error",e=>{
   if(e.type==="unavailable-id"){try{LP.destroy()}catch(x){}LP=null;if(tries<6)setTimeout(()=>liveHost(tries+1),4000);else liveStatus("Nome de grupo já em uso por outro dispositivo")}
   else if(e.type==="network"||e.type==="server-error"||e.type==="socket-error")liveStatus("Sem conexão para acompanhamento ao vivo")});
@@ -77,7 +77,7 @@ function mirrorTo(box,statusEl,group,onMeta){
  };
  const start=()=>connect();if(p.open)start();else p.on("open",start);
  p.on("error",e=>{if(e.type==="peer-unavailable"){statusEl.textContent="Grupo “"+group+"” não encontrado. Confira o nome e se o representante já se cadastrou."}});
- return {close:()=>{clearTimeout(retry);try{conn&&conn.close()}catch(e){}}};
+ return {close:()=>{clearTimeout(retry);try{conn&&conn.close()}catch(e){}},send:m=>{try{if(conn&&conn.open){conn.send(JSON.stringify(m));return true}}catch(e){}return false}};
 }
 let CUR=null;
 function acompanhar(el){
@@ -102,10 +102,12 @@ function grupos(el){
  const draw=()=>{
   el.innerHTML=`<h1>Acompanhar <span>grupos</span></h1><p class="lead">Adicione os nomes dos grupos cadastrados. Cada cartão mostra o andamento ao vivo, e você pode abrir a tela completa do grupo.</p>
   <div class="card"><label class="l" for="ng">Nome do grupo</label><input type="text" id="ng" maxlength="30" placeholder="Nome exato cadastrado pelo representante"><div class="btns"><button class="btn" id="ad">Adicionar</button></div></div>
-  <div class="grid" id="gl">${list.map(g=>`<div class="card" data-g="${esc(g)}"><span class="tag">${esc(g)}</span><h3 data-r="n">—</h3><p data-r="s">Conectando…</p><div class="btns"><button class="btn sm alt" data-o="${esc(g)}">Abrir tela</button><button class="btn sm alt" data-x="${esc(g)}">Remover</button></div></div>`).join("")}</div>
+  <div class="grid" id="gl">${list.map(g=>`<div class="card" data-g="${esc(g)}"><span class="tag">${esc(g)}</span><h3 data-r="n">—</h3><p data-r="s">Conectando…</p><div class="btns"><button class="btn sm alt" data-o="${esc(g)}">Abrir tela</button><button class="btn sm alt" data-x="${esc(g)}">Remover</button></div><div class="btns"><button class="btn sm alt" data-rs="${esc(g)}">Reiniciar partida</button><button class="btn sm alt" data-dl="${esc(g)}">Apagar grupo</button></div></div>`).join("")}</div>
   <div class="banner" id="bn2" style="display:none"></div><div id="st2" class="lead"></div><div id="mirror2" class="mirror"></div>`;
   $("#ad").onclick=()=>{const g=$("#ng").value.trim();if(g&&!list.includes(g)){list.push(g);saveL();draw()}};
   document.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{list=list.filter(x=>x!==b.dataset.x);saveL();draw()});
+  document.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>{const g=b.dataset.rs;askPin("Reiniciar a partida do grupo “"+g+"”? O progresso e o tempo serão zerados.",h=>{const m=GM[g];toast(m&&m.send({cmd:"reset",ph:h})?"Comando enviado: partida reiniciada.":"Grupo não está conectado agora.")})});
+  document.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const g=b.dataset.dl;askPin("Apagar o grupo “"+g+"”? O cadastro e o progresso serão removidos do aparelho dele.",h=>{const m=GM[g];const ok=m&&m.send({cmd:"delete",ph:h});toast(ok?"Comando enviado: grupo apagado.":"Grupo não está conectado agora.");if(ok){list=list.filter(x=>x!==g);saveL();setTimeout(draw,600)}})});
   document.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{const g=b.dataset.o;Object.values(GM).forEach(m=>{m.full=false});if(GM[g])GM[g].full=true;$("#bn2").style.display="block";$("#bn2").textContent="Tela do grupo “"+g+"” · somente leitura";if(GM[g]&&GM[g].last)$("#mirror2").innerHTML=cleanHtml(GM[g].last.html);scrollTo(0,document.body.scrollHeight)});
   list.forEach(g=>{
    const card=[...document.querySelectorAll("#gl .card")].find(c=>c.dataset.g===g);const hid=document.createElement("div");
@@ -117,4 +119,32 @@ function grupos(el){
   });
  };
  draw();
+}
+
+/* ---------- reiniciar partida / apagar grupo (protegido por PIN) ---------- */
+function askPin(msg,cb){
+ const o=document.createElement("div");o.className="modal";
+ o.innerHTML='<div class="box"><b>'+esc(msg)+'</b><input type="password" id="mpin" placeholder="PIN do professor" autocomplete="off" style="margin-top:10px"><div class="btns"><button class="btn" id="mok">Confirmar</button><button class="btn alt" id="mno">Cancelar</button></div><div id="mfb"></div></div>';
+ document.body.appendChild(o);const i=o.querySelector("#mpin");i.focus();
+ const close=()=>o.remove();
+ const go=async()=>{const h=await sha256(i.value.trim());if(h===PROF_HASH){close();cb(h)}else o.querySelector("#mfb").innerHTML='<div class="fb bad">PIN incorreto.</div>'};
+ o.querySelector("#mok").onclick=go;o.querySelector("#mno").onclick=close;
+ i.addEventListener("keydown",e=>{if(e.key==="Enter")go();if(e.key==="Escape")close()});
+}
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),4000)}
+function applyCmd(kind){
+ if(kind==="reset"){
+  S={name:S.name,group:S.group,phase:{},mini:{},ck:{},tools:{},cs:null,ce:null};save();hud();
+  if(location.hash!=="#/")location.hash="#/";else render();
+  toast("Partida reiniciada pelo professor");pushSnap&&pushSnap();
+ }else if(kind==="delete"){
+  try{LP&&LP.destroy()}catch(e){}LP=null;
+  try{localStorage.removeItem(KEY)}catch(e){}
+  S={name:"",group:"",phase:{},mini:{},ck:{},tools:{},cs:null,ce:null};
+  location.hash="#/";location.reload();
+ }
+}
+function profAct(kind){
+ askPin(kind==="reset"?"Reiniciar a partida deste grupo? Todo o progresso e o tempo serão zerados.":"Apagar este grupo? O cadastro e o progresso serão removidos.",()=>{
+  if(confirm(kind==="reset"?"Confirmar: zerar a partida deste grupo?":"Confirmar: apagar este grupo?"))applyCmd(kind)});
 }

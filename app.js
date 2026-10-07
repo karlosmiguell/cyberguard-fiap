@@ -119,7 +119,8 @@ function home(el){
  <div class="card ${lock?"lock":""}"><span class="tag">${ckCount()}/${CHECKLIST.flatMap(g=>g[1]).length} marcados</span><h3>Checklist de segurança</h3><p>Plano de boas práticas do grupo. Cada item vale 10 pontos.</p><div class="btns"><button class="btn sm alt" ${lock?"disabled":""} onclick="nav('#/checklist')">Abrir</button></div></div></div>
  <h2>Conquistas <span>· ${bc}/${BADGES.length}</span></h2>
  <div class="badges">${BADGES.map(b=>`<div class="badge ${bg[b[0]]?"got":""}"><b>${b[1]}</b>${b[2]}</div>`).join("")}</div>
- <div class="btns"><button class="btn alt" onclick="nav('#/competicao')">Regras da competição</button></div>`;
+ <div class="btns"><button class="btn alt" onclick="nav('#/competicao')">Regras da competição</button></div>
+ <details class="card" style="margin-top:18px"><summary class="tag" style="cursor:pointer">Opções do professor (exigem PIN)</summary><p class="lead" style="margin:8px 0">Use só se o professor pedir.</p><div class="btns"><button class="btn sm alt" onclick="profAct('reset')">Reiniciar partida (zerar)</button><button class="btn sm alt" onclick="profAct('delete')">Apagar grupo</button></div></details>`;
 }
 
 /* ---------- fases: e-mails ---------- */
