@@ -91,3 +91,11 @@ footer{text-align:center;color:#555;font-size:12px;padding:24px 10px}
 
 #backAula{display:none;position:fixed;right:16px;bottom:16px;z-index:50;background:var(--mag);color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:30px;box-shadow:0 0 18px rgba(255,46,151,.6);font-size:14px}
 @media print{#backAula{display:none!important}}
+
+#ptool{max-width:1000px;margin:0 auto;padding:4px 18px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#ptool a{font-size:12px;background:var(--card);border:1px solid var(--line);color:var(--txt);text-decoration:none;border-radius:16px;padding:5px 10px}
+#ptool a:hover{border-color:var(--neon);color:var(--neon)}
+.banner{background:rgba(255,176,32,.12);border:1px solid var(--warn);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:14px}
+.mirror{pointer-events:none;user-select:none;-webkit-user-select:none;margin-top:8px}
+.mirror button,.mirror a{pointer-events:none}
+@media print{#ptool{display:none!important}}

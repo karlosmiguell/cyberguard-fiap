@@ -23,22 +23,22 @@ function hub(el){
 
 /* ---------- página de exemplo: como funciona a competição ---------- */
 function competicao(el){
- const demo=[["Ana","1",1500,372],["Bruno","2",1500,520],["Carla","1",1300,330],["Diego","3",1200,300],["Eva","2",1000,410]];
+ const demo=[["Os Guardiões","Ana",1500,372],["Firewall","Bruno",1500,520],["Cyber Squad","Carla",1300,330],["Bits e Bytes","Diego",1200,300],["Zero Day","Eva",1000,410]];
  el.innerHTML=`<h1>Como funciona a <span>competição</span></h1>
  <p class="lead">Vence quem entrega <b>correto</b>, com <b>mais pontos</b>, em <b>menos tempo</b>. Prêmio: 🍫 um chocolate.</p>
  <div class="grid">
   <div class="card"><span class="tag">Passo 1</span><h3>O desafio</h3><p>16 questões iguais para todos: 6 e-mails (golpe ou legítimo) e 10 perguntas, uma de cada assunto.</p></div>
   <div class="card"><span class="tag">Passo 2</span><h3>Pontos</h3><p>100 pontos por acerto. Máximo: ${DZ_MAX}. Errar ou marcar "Não sei" dá 0 e não tira pontos.</p></div>
   <div class="card"><span class="tag">Passo 3</span><h3>Tempo</h3><p>O cronômetro corre do primeiro ao último item. Em empate de pontos, vence o menor tempo.</p></div>
-  <div class="card"><span class="tag">Passo 4</span><h3>Entrega</h3><p>No fim, copie o <b>código do desafio</b> e entregue ao professor. Ele monta o placar na frente de todos.</p></div>
+  <div class="card"><span class="tag">Passo 4</span><h3>Entrega</h3><p>No fim, o representante copia o <b>código do desafio</b> e entrega ao professor. Ele monta o placar na frente de todos.</p></div>
  </div>
  <h2>Exemplo de <span>placar</span> <small style="font-size:13px;color:var(--mut)">(ilustrativo)</small></h2>
- <div class="card"><table><tr><th>#</th><th>Nome</th><th>Grupo</th><th>Pontos</th><th>Tempo</th></tr>${demo.map((d,i)=>`<tr><td>${i+1}${i===0?" 🍫":""}</td><td>${d[0]}</td><td>${d[1]}</td><td><b>${d[2]}</b></td><td>${fmtT(d[3])}</td></tr>`).join("")}</table>
- <p class="lead" style="margin:10px 0 0">Ana e Bruno empataram em 1.500 pontos. Ana ganha por ter feito em menos tempo.</p></div>
+ <div class="card"><table><tr><th>#</th><th>Grupo</th><th>Representante</th><th>Pontos</th><th>Tempo</th></tr>${demo.map((d,i)=>`<tr><td>${i+1}${i===0?" 🍫":""}</td><td>${d[0]}</td><td>${d[1]}</td><td><b>${d[2]}</b></td><td>${fmtT(d[3])}</td></tr>`).join("")}</table>
+ <p class="lead" style="margin:10px 0 0">Os Guardiões e o Firewall empataram em 1.500 pontos. Os Guardiões ganham por terem feito em menos tempo.</p></div>
  <h2>Assuntos <span>do desafio</span></h2>
  <div class="chips">${CATS.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}</div>
- <div class="card"><b>Regras justas:</b> uma tentativa oficial por pessoa; depois disso, só modo teste. Sem consulta a colegas durante o desafio. Reportar erro de conteúdo ao professor.</div>
- <div class="btns"><button class="btn" onclick="nav('#/desafio/teste')">Testar o desafio (modo teste, não vale)</button><button class="btn alt" onclick="nav('#/lab')">Abrir o laboratório</button><button class="btn alt" onclick="nav('#/placar')">Placar (professor)</button></div>`;
+ <div class="card"><b>Regras:</b> a competição é por <b>grupo</b>. Apenas o representante se cadastra e joga; o restante do grupo acompanha e ajuda a decidir. Uma tentativa oficial por grupo; depois disso, só modo teste. Sem consultar outros grupos.</div>
+ <div class="btns"><button class="btn" onclick="nav('#/desafio/teste')">Testar o desafio (modo teste, não vale)</button><button class="btn alt" onclick="nav('#/lab')">Abrir o laboratório</button>${isProf()?`<button class="btn alt" onclick="nav('#/placar')">Placar (professor)</button>`:""}</div>`;
 }
 
 /* ---------- desafio ---------- */
@@ -49,7 +49,7 @@ function desafioRoute(el,mode){
  if(!test&&S.dr)return dzResult(el,S.dr,false);
  if(!test&&S.dz&&S.dz.start&&!S.dz.end)return dzRun(el,false,true);
  el.innerHTML=`<button class="back" onclick="nav('#/')">← Início</button><h1>Desafio <span>da turma</span>${test?" · modo teste":""}</h1>
- <p class="lead">${test?"Modo teste: igual ao desafio real, mas não vale nada e não gera código.":"Valendo o chocolate. Você tem uma tentativa oficial."}</p>
+ <p class="lead">${test?"Modo teste: igual ao desafio real, mas não vale nada e não gera código.":"Valendo o chocolate. O grupo tem uma tentativa oficial, feita pelo representante."}</p>
  <div class="card"><ul><li>16 questões sobre os 10 assuntos, uma de cada vez.</li><li>100 pontos por acerto. O cronômetro corre do início ao fim (inclui ler as explicações).</li><li>Vence quem fizer mais pontos e, em empate, menor tempo.</li><li>No fim, você recebe um código para entregar ao professor.</li></ul>
  <div class="btns"><button class="btn" id="go">${test?"Iniciar teste":"Iniciar o desafio oficial"}</button>${test?"":'<button class="btn alt" onclick="nav(\'#/desafio/teste\')">Prefiro testar antes</button>'}</div></div>`;
  $("#go").onclick=()=>{
@@ -111,9 +111,8 @@ function placar(el){
   if(!all.length){$("#out").innerHTML='<div class="card">Nenhum código válido encontrado.</div>';return}
   const G={};L.forEach(o=>{const g=G[o.g]=G[o.g]||{n:0,s:0,t:0};g.n++;g.s+=o.c;g.t+=o.ct});
   const gl=Object.entries(G).map(([g,v])=>({g,n:v.n,m:Math.round(v.s/v.n),t:Math.round(v.t/v.n)})).sort((a,b)=>b.m-a.m||a.t-b.t);
-  $("#out").innerHTML=`<h2>Ranking <span>individual</span> · desafio</h2><div class="card"><table><tr><th>#</th><th>Nome</th><th>Grupo</th><th>Pontos</th><th>Tempo</th></tr>${L.map((o,i)=>`<tr><td>${i+1}${i===0?" 🍫":i<3?" "+["","🥈","🥉"][i]:""}</td><td>${esc(o.n)}</td><td>${esc(o.g)}</td><td><b>${o.c}</b></td><td>${fmtT(o.ct)}</td></tr>`).join("")||'<tr><td colspan="5">Ninguém entregou o desafio ainda.</td></tr>'}</table></div>
-  ${gl.length?`<h2>Ranking <span>por grupo</span> (média)</h2><div class="card"><table><tr><th>#</th><th>Grupo</th><th>Pessoas</th><th>Média de pontos</th><th>Tempo médio</th></tr>${gl.map((g,i)=>`<tr><td>${i+1}</td><td>${esc(g.g)}</td><td>${g.n}</td><td><b>${g.m}</b></td><td>${fmtT(g.t)}</td></tr>`).join("")}</table></div>`:""}
-  ${X.length?`<h2>Sem desafio <span>(só laboratório)</span></h2><div class="card">${X.map(o=>esc(o.n)+" ("+esc(o.g)+"): "+o.s+" XP").join("<br>")}</div>`:""}`};
+  $("#out").innerHTML=`<h2>Ranking <span>dos grupos</span> · desafio</h2><div class="card"><table><tr><th>#</th><th>Grupo</th><th>Representante</th><th>Pontos</th><th>Tempo</th></tr>${L.map((o,i)=>`<tr><td>${i+1}${i===0?" 🍫":i<3?" "+["","🥈","🥉"][i]:""}</td><td>${esc(o.g)}</td><td>${esc(o.n)}</td><td><b>${o.c}</b></td><td>${fmtT(o.ct)}</td></tr>`).join("")||'<tr><td colspan="5">Ninguém entregou o desafio ainda.</td></tr>'}</table></div>
+  ${X.length?`<h2>Sem desafio <span>(só laboratório)</span></h2><div class="card">${X.map(o=>"Grupo "+esc(o.g)+" ("+esc(o.n)+"): "+o.s+" XP").join("<br>")}</div>`:""}`};
  $("#mk").onclick=build;
- $("#ex").onclick=()=>{$("#ta").value=[["Ana","1",1500,372],["Bruno","2",1500,520],["Carla","1",1300,330],["Diego","3",1200,300],["Eva","2",1000,410]].map(([n,g,c,ct])=>encodeCode({n,g,s:c,l:2,d:3,b:2,c,ct})).join("\n");build()};
+ $("#ex").onclick=()=>{$("#ta").value=[["Ana","Os Guardiões",1500,372],["Bruno","Firewall",1500,520],["Carla","Cyber Squad",1300,330],["Diego","Bits e Bytes",1200,300],["Eva","Zero Day",1000,410]].map(([n,g,c,ct])=>encodeCode({n,g,s:c,l:2,d:3,b:2,c,ct})).join("\n");build()};
 }

@@ -43,14 +43,18 @@ function nav(h){location.hash=h}
 window.addEventListener("hashchange",render);
 function hud(){
  const lv=level(),into=xp()%1000;
- $("#hud").innerHTML=S.name?`<span class="pill">${esc(S.name)}${S.group?" · Grupo "+esc(S.group):""}</span><span class="pill">Nível <b>${lv}</b><span class="xpbar"><i style="width:${into/10}%"></i></span></span><span class="pill"><b>${xp()}</b> XP</span>`:"";
+ $("#hud").innerHTML=S.name?`<span class="pill">${S.group?"Grupo <b>"+esc(S.group)+"</b> · ":""}${esc(S.name)}</span><span class="pill">Nível <b>${lv}</b><span class="xpbar"><i style="width:${into/10}%"></i></span></span><span class="pill"><b>${xp()}</b> XP</span>`:"";
 }
 function render(){
  hud();const r=(location.hash||"#/").slice(2).split("/");const v=r[0]||"home",a=r[1];
  let ai=null;try{ai=sessionStorage.getItem("cgAula")}catch(e){}
  const ba=$("#backAula");if(ba){const show=ai!==null&&["fase","mini","checklist","resultado"].includes(v);ba.style.display=show?"block":"none";ba.href="#/aula/"+(ai||0)}
- const pl=$("#pl");if(pl)pl.style.display=(v==="desafio"||v==="home")?"none":"inline";
- const el=$("#app");scrollTo(0,0);
+  const el=$("#app");scrollTo(0,0);
+ ptool();
+ if(v==="prof")return profLogin(el);
+ if(v==="acompanhar")return acompanhar(el);
+ if(["placar","professor","temas","grupos"].includes(v)&&!isProf())return profGate(el);
+ if(v==="grupos")return grupos(el);
  if(v==="placar")return placar(el);
  if(v==="professor")return hostRoute(el,a);
  if(v==="competicao")return competicao(el);
@@ -68,13 +72,26 @@ function render(){
 
 /* ---------- boas-vindas e início ---------- */
 function welcome(el){
- el.innerHTML=`<h1>Você é o(a) analista de segurança <span>de hoje</span></h1>
- <p class="lead">Na Atlântica Serviços (empresa fictícia), a caixa de entrada não para. Investigue cada mensagem, decida se é golpe e some pontos. Nada do que você digita sai do seu navegador.</p>
- <div class="card"><label class="l" for="nm">Seu nome ou apelido</label><input type="text" id="nm" maxlength="30" placeholder="Ex.: Ana S." autocomplete="off">
- <label class="l" for="gp">Seu grupo</label><select id="gp"><option value="">Sem grupo</option>${[1,2,3,4,5,6,7,8].map(n=>`<option>${n}</option>`).join("")}</select>
- <div class="btns"><button class="btn" id="go">Começar</button></div></div>
- <div class="card"><b>Como funciona</b><ul><li>5 fases com 4 e-mails cada. Use as ferramentas de investigação (de graça e sem limite).</li><li>Decida: <b>Reportar</b> (golpe), <b>Aceitar</b> (legítimo) ou <b>Não sei</b>. Errar não tira pontos.</li><li>Minijogos, LGPD, senha e o checklist final somam XP. No final, gere seu código para o placar da turma.</li></ul></div>`;
- $("#go").onclick=()=>{const n=$("#nm").value.trim();if(!n){$("#nm").focus();return}S.name=n.slice(0,30);S.group=$("#gp").value;save();render()};
+ el.innerHTML=`<h1>Cadastre o <span>grupo</span></h1>
+ <p class="lead">Apenas <b>um aluno por grupo</b> se cadastra e joga no computador. Os demais acompanham pela tela do representante ou pelo link “Acompanhar um grupo”, só para ver, sem editar.</p>
+ <div class="card"><label class="l" for="gp">Nome do grupo (sem repetir com outro grupo)</label><input type="text" id="gp" maxlength="30" placeholder="Ex.: Os Guardiões" autocomplete="off">
+ <label class="l" for="nm">Nome do representante</label><input type="text" id="nm" maxlength="30" placeholder="Ex.: Ana S." autocomplete="off">
+ <div class="btns"><button class="btn" id="go">Cadastrar grupo e começar</button><button class="btn alt" onclick="nav('#/acompanhar')">Só quero acompanhar um grupo</button></div><div id="fb"></div></div>
+ <div class="card"><b>Como funciona</b><ul><li>O representante faz as atividades. O restante do grupo acompanha e ajuda a decidir.</li><li>O Laboratório é para treinar. O Desafio vale a competição: mais pontos em menos tempo ganha o chocolate.</li><li>Nada do que você digita é enviado a servidores; o acompanhamento ao vivo é feito direto entre os dispositivos.</li></ul></div>`;
+ $("#go").onclick=async()=>{
+  const g=$("#gp").value.trim(),n=$("#nm").value.trim();
+  if(!g){$("#gp").focus();return}if(!n){$("#nm").focus();return}
+  const b=$("#go");b.disabled=true;b.textContent="Cadastrando…";
+  const done=()=>{S={name:n.slice(0,30),group:g.slice(0,30),phase:{},mini:{},ck:{},tools:{}};save();liveHost();render()};
+  if(!window.Peer){done();return}
+  /* testa se o nome do grupo já está em uso */
+  let finished=false;const fin=(ok,msg)=>{if(finished)return;finished=true;try{t.destroy()}catch(e){}
+   if(ok)done();else{b.disabled=false;b.textContent="Cadastrar grupo e começar";$("#fb").innerHTML='<div class="fb bad">'+msg+'</div>'}};
+  let t;try{t=new Peer("cgfiap-"+slug(g))}catch(e){return done()}
+  t.on("open",()=>fin(true));
+  t.on("error",e=>{if(e.type==="unavailable-id")fin(false,"Esse nome de grupo já está em uso. Escolha outro, ou use “Só quero acompanhar um grupo”.");else fin(true)});
+  setTimeout(()=>fin(true),7000);
+ };
 }
 function home(el){
  const bg=badges(),bc=Object.values(bg).filter(Boolean).length;
@@ -271,3 +288,4 @@ function result(el){
  $("#rs").onclick=()=>{if(confirm("Apagar todo o seu progresso neste navegador?")){try{localStorage.removeItem(KEY)}catch(e){}location.hash="#/";location.reload()}};
 }
 render();
+liveStart();
