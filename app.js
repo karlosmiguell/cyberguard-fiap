@@ -58,8 +58,9 @@ function render(){
  ptool();
  if(v==="prof")return profLogin(el);
  if(v==="acompanhar")return acompanhar(el);
- if(["placar","professor","temas","grupos","aula"].includes(v)&&!isProf())return profGate(el);
+ if(["placar","professor","temas","grupos","aula","validar"].includes(v)&&!isProf())return profGate(el);
  if(v==="grupos")return grupos(el);
+ if(v==="validar")return validar(el,a);
  if(v==="placar")return placar(el);
  if(v==="professor")return hostRoute(el,a);
  if(v==="competicao")return competicao(el);
