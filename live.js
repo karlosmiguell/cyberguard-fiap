@@ -21,7 +21,7 @@ function profGate(el){
 function ptool(){
  const t=$("#ptool");if(!t)return;
  if(!isProf()){t.innerHTML="";t.style.display="none";return}
- const L=[["Competição","#/"],["Como funciona","#/competicao"],["Placar","#/placar"],["Acompanhar grupos","#/grupos"],["Validar com a turma","#/validar"],["Gabaritos","#/temas"],["Roteiro por tema","#/aula/0"],["Quiz ao vivo","#/professor"],["Sair","#/prof"]];
+ const L=[["Exemplos ao vivo","#/exemplos"],["Competição","#/"],["Como funciona","#/competicao"],["Placar","#/placar"],["Acompanhar grupos","#/grupos"],["Validar com a turma","#/validar"],["Gabaritos","#/temas"],["Roteiro por tema","#/aula/0"],["Quiz ao vivo","#/professor"],["Sair","#/prof"]];
  t.style.display="flex";t.innerHTML='<span class="tag">Professor</span>'+L.map(l=>`<a href="${l[1]}">${l[0]}</a>`).join("");
 }
 
